@@ -1,5 +1,5 @@
-const CACHE_NAME = 'gdscript-quest-v1';
-const FILES = ['index.html', 'style.css', 'accessibility.css', 'favicon.svg', 'course-data.js', 'storage.js', 'validator.js', 'gamification.js', 'offline.js', 'app.js'];
+const CACHE_NAME = 'gdscript-quest-v2';
+const FILES = ['index.html', 'style.css', 'accessibility.css', 'favicon.svg', 'course-data.js', 'storage.js', 'validator.js', 'gamification.js', 'practice.js', 'offline.js', 'app.js'];
 
 self.addEventListener('install', (event) => {
   const urls = [self.registration.scope, ...FILES.map((file) => new URL(file, self.registration.scope).href)];

@@ -8,6 +8,7 @@
     { id: 'Signal Boost', title: 'SIGNAL BOOST', detail: 'Sent your first signal.', lesson: 26, icon: '⌁' },
     { id: 'Vector Vibes', title: 'VECTOR VIBES', detail: 'Learned about vectors.', lesson: 29, icon: '↗' },
     { id: 'Dog Golf Dev', title: 'DOG GOLF DEV', detail: 'Started the final project.', project: true, icon: '🐕' },
+    { id: 'Putt Pup', title: 'PUTT PUP', detail: 'Cleared all three holes in the practice yard.', practice: true, icon: '⛳' },
     { id: 'Code Wizard', title: 'CODE WIZARD', detail: 'Completed the entire course.', all: true, icon: '✹' }
   ];
   const xpForLevel = (level) => 250 + Math.max(0, level - 1) * 35;
@@ -36,7 +37,7 @@
   function unlock(state) {
     const fresh = [];
     for (const badge of badges) {
-      const eligible = badge.all ? state.completed.length === 46 : badge.project ? Object.values(state.project).some(Boolean) : state.completed.includes(badge.lesson);
+      const eligible = badge.all ? state.completed.length === 46 : badge.project ? Object.values(state.project).some(Boolean) : badge.practice ? state.earned.includes('practice-yard:course-clear') : state.completed.includes(badge.lesson);
       if (eligible && !state.achievements.includes(badge.id)) { state.achievements.push(badge.id); fresh.push(badge); }
     }
     return fresh;

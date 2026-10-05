@@ -59,15 +59,80 @@
     ]}
   ];
 
+  const quizPresets = {
+    1: { type: 'prediction', question: 'Biscuit gets one extra stroke. What number is printed?', code: 'var strokes = 2\nstrokes += 1\nprint(strokes)', choices: ['2', '3', '21'], correct: 1, explanation: 'The assignment adds one to 2, so the new value is 3.' },
+    2: { type: 'type-answer', question: 'Fill in the type for a whole-number stroke count.', code: 'var strokes: ___ = 3', accepted: ['int', 'integer'], explanation: 'int is the GDScript type for whole numbers.' },
+    3: { type: 'prediction', question: 'The dog gets a snack bonus. What does this print?', code: 'print(2 + 3 * 4)', choices: ['20', '14', '24'], correct: 1, explanation: 'Multiplication happens before addition, so 2 + 12 is 14.' },
+    4: { type: 'bug-hunt', question: 'The dog is always celebrating. What is wrong with this check?', code: 'if health = 0:\n    print("GAME OVER")', choices: ['A single = assigns; compare with ==.', 'The message needs to be uppercase.', 'if cannot check numbers.'], correct: 0, explanation: 'An if condition checks a comparison. A single = changes a value.' },
+    5: { type: 'true-false', question: 'An else block runs when the if condition is true.', code: 'if ball_moving:\n    print("Wait")\nelse:\n    print("Aim")', choices: ['True', 'False'], correct: 1, explanation: 'False. else is the fallback when the if condition is false.' },
+    6: { type: 'type-answer', question: 'Which word means both conditions must be true?', code: 'if ball_stopped ___ dog_ready:', accepted: ['and'], explanation: 'and requires both checks to be true.' },
+    8: { type: 'rearrange', question: 'Put the celebration function together. Move its header above the dog’s lines.', code: '', lines: ['    print("FETCH!")', 'func celebrate():', '    print("Biscuit approves!")'], correctOrder: [1, 2, 0], explanation: 'A function header comes first. Its indented instructions follow.' },
+    10: { type: 'prediction', question: 'What does the function send back?', code: 'func next_stroke(strokes):\n    return strokes + 1\n\nprint(next_stroke(2))', choices: ['2', '3', '1'], correct: 1, explanation: 'next_stroke adds one, then returns 3 to the caller.' },
+    11: { type: 'type-answer', question: 'One word is missing from this loop. Type it in.', code: 'for hole ___ holes:', accepted: ['in'], explanation: 'A for loop uses in between the item and collection.' },
+    12: { type: 'bug-hunt', question: 'This while loop never gets to start. Spot the syntax bug.', code: 'while strokes < 3\n    strokes += 1', choices: ['The condition line needs a colon.', 'while loops cannot change variables.', 'The number must be in quotes.'], correct: 0, explanation: 'A while header ends with a colon before its indented block.' },
+    13: { type: 'true-false', question: 'The first position in a GDScript array is index 1.', code: 'var holes = ["Pond", "Hill"]', choices: ['True', 'False'], correct: 1, explanation: 'False. The first item is at index 0.' },
+    14: { type: 'type-answer', question: 'A dictionary uses a ___ to find the value you want.', code: 'level["___"]', accepted: ['key', 'key name'], explanation: 'The key is the label you look up in a dictionary.' },
+    16: { type: 'rearrange', question: 'Put the local power calculation inside the function that uses it.', code: '', lines: ['    var shot_power = 10', 'func shoot_ball():', '    print(shot_power)'], correctOrder: [1, 0, 2], explanation: 'The function header starts the block; its local variable and use are indented inside.' },
+    17: { type: 'type-answer', question: 'Which keyword declares a value that should not change?', code: '___ MAX_STROKES = 12', accepted: ['const', 'constant'], explanation: 'const marks a value as fixed.' },
+    21: { type: 'bug-hunt', question: 'Why can’t this script find the score label?', code: '@onready var score_label = HUD/ScoreLabel', choices: ['A node path needs a $ before HUD.', 'Node paths must use backslashes.', 'The variable name has to be uppercase.'], correct: 0, explanation: 'The $ shorthand asks Godot for a node at that scene-tree path.' },
+    22: { type: 'true-false', question: 'Godot calls _ready() after a node and its children are ready.', code: 'func _ready():\n    print("Round ready")', choices: ['True', 'False'], correct: 0, explanation: 'True. _ready() runs once after the node and its children enter the scene tree.' },
+    23: { type: 'prediction', question: 'Suppose one frame has delta = 0.5. What value gets printed?', code: 'func _process(delta):\n    var sparkle_spin = delta * 2.0\n    print(sparkle_spin)', choices: ['0.5', '1.0', '2.5'], correct: 1, explanation: '0.5 multiplied by 2.0 is 1.0 for this frame.' },
+    25: { type: 'bug-hunt', question: 'The shoot action is detected, but the dog never shoots. What is missing?', code: 'if Input.is_action_just_pressed("shoot"):\n    shoot_ball', choices: ['Call the function with parentheses: shoot_ball().', 'Add a second Input before shoot.', 'Change the action name to a number.'], correct: 0, explanation: 'A function name alone does not call it; add parentheses.' },
+    26: { type: 'type-answer', question: 'What method sends a signal to listeners?', code: 'ball_stopped.___()', accepted: ['emit'], explanation: 'Calling emit() broadcasts the signal to connected listeners.' },
+    27: { type: 'rearrange', question: 'Create the ball, place it at the tee, then add it to the scene.', code: '', lines: ['add_child(ball)', 'var ball = ball_scene.instantiate()', 'ball.position = tee_position'], correctOrder: [1, 2, 0], explanation: 'Instantiate the scene first, set it up, then add it as a child.' },
+    29: { type: 'prediction', question: 'Which x value does aim.x print?', code: 'var aim = Vector2(4, -2)\nprint(aim.x)', choices: ['-2', '4', '2'], correct: 1, explanation: 'The first Vector2 number is its x component: 4.' },
+    31: { type: 'true-false', question: 'Velocity describes both speed and direction.', code: 'velocity = aim * shot_power', choices: ['True', 'False'], correct: 0, explanation: 'True. Velocity combines how fast something moves and which way.' },
+    32: { type: 'bug-hunt', question: 'The ball bonks the log, but this line will not parse. Spot the bug.', code: 'if move_and_collide(velocity * delta)\n    print("Bonk!")', choices: ['The if line needs a colon.', 'delta must be an integer.', 'print cannot go inside an if.'], correct: 0, explanation: 'GDScript uses a colon at the end of a control-flow header.' },
+    33: { type: 'type-answer', question: 'Which body node lets physics simulate a rolling golf ball?', code: 'extends ___', accepted: ['RigidBody2D', 'rigid body 2d'], explanation: 'RigidBody2D is moved by Godot’s physics simulation.' },
+    36: { type: 'rearrange', question: 'Spawn a hazard: make it, place it, then add it to the level.', code: '', lines: ['add_child(hazard)', 'var hazard = hazard_scene.instantiate()', 'hazard.position = spawn_point'], correctOrder: [1, 2, 0], explanation: 'Create the instance first, set its position, then add it to the scene tree.' },
+    38: { type: 'prediction', question: 'What message appears on the scoreboard?', code: 'var strokes = 3\nprint("Strokes: %d" % strokes)', choices: ['Strokes: 3', '3 Strokes', 'Strokes: %d'], correct: 0, explanation: '%d is replaced by the stroke count, so the label reads “Strokes: 3”.' },
+    39: { type: 'true-false', question: 'Saving data only changes memory; it never writes anything for a later session.', code: 'FileAccess.open("user://save.json", FileAccess.WRITE)', choices: ['True', 'False'], correct: 1, explanation: 'False. Saving writes data so it can be loaded in a later session.' },
+    40: { type: 'rearrange', question: 'Put the reusable stroke helper in order.', code: '', lines: ['    score_changed.emit(strokes)', 'func award_stroke():', '    strokes += 1'], correctOrder: [1, 2, 0], explanation: 'The helper starts with a function header, then changes strokes and emits the update.' },
+    41: { type: 'bug-hunt', question: 'The debug print has a tiny punctuation problem. Find it.', code: 'print("ball velocity: ", velocity', choices: ['It is missing a closing parenthesis.', 'velocity must be printed first.', 'Debug messages need a semicolon.'], correct: 0, explanation: 'The print call needs its closing parenthesis.' },
+    42: { type: 'type-answer', question: 'Which keyword declares an event other nodes can listen for?', code: '___ score_changed(new_score)', accepted: ['signal'], explanation: 'The signal keyword declares an event other nodes can connect to.' },
+    43: { type: 'rearrange', question: 'Skip hidden sparkle work, then update it when visible.', code: '', lines: ['    update_sparkle()', 'if not is_visible:', '    return'], correctOrder: [1, 2, 0], explanation: 'An early return skips the update when the sparkle is not visible.' },
+    44: { type: 'prediction', question: 'The ball has landed. What does this print?', code: 'var landed = true\nif landed:\n    print("PLOP!")', choices: ['Nothing', 'PLOP!', 'true'], correct: 1, explanation: 'The condition is true, so the indented print runs.' },
+    45: { type: 'true-false', question: 'A clear ending helps players know when the game is complete.', code: 'func show_results():\n    results_panel.visible = true', choices: ['True', 'False'], correct: 0, explanation: 'True. A result screen can make the goal and ending clear.' },
+    46: { type: 'type-answer', question: 'An export preset packages your project for a target ___.', code: 'Export preset → target ___', accepted: ['platform', 'device', 'system'], explanation: 'An export preset prepares a game for a target platform.' }
+  };
+
+  const distractors = {
+    data: ['It runs once every frame without being called.', 'It makes a new scene in the scene tree.'],
+    logic: ['It stores a value under a name.', 'It repeats a block once for every item in a list.'],
+    function: ['It stores a value that cannot change.', 'It runs automatically every physics tick.'],
+    repeat: ['It sends an event to another node.', 'It creates a copy of a saved scene.'],
+    collection: ['It runs every frame while the game is open.', 'It compares two values and chooses a branch.'],
+    structure: ['It creates a physics collision shape.', 'It sends an event to other nodes.'],
+    godot: ['It stores an ordered list of values.', 'It describes an object’s speed and direction.'],
+    physics: ['It labels a value in a dictionary.', 'It runs once when a node becomes ready.'],
+    systems: ['It stores a value that cannot change.', 'It repeats code once per frame.']
+  };
+  const normalizeChoices = (quiz, seed) => {
+    if (!quiz.choices || quiz.type === 'true-false') return quiz;
+    const shift = seed % quiz.choices.length;
+    return {
+      ...quiz,
+      choices: [...quiz.choices.slice(shift), ...quiz.choices.slice(0, shift)],
+      correct: (quiz.correct - shift + quiz.choices.length) % quiz.choices.length
+    };
+  };
+  const challengeStories = [
+    'A very polite goose has stolen the flag.', 'The snack cart is rolling downhill again.',
+    'Biscuit’s tail just bonked the scoreboard.', 'A tiny tornado swapped all the hole signs.',
+    'The golf ball has parked itself in a dog bed.', 'The crowd is cheering for the wrong ball.',
+    'A suspiciously large mushroom is blocking the green.', 'The hole has wandered off to get snacks.'
+  ];
+  const bossNames = { 10: 'The Return of the Bounce', 18: 'The Colon Goblin', 28: 'The Scene-Stealing Slime', 38: 'Scoreboard Showdown', 46: 'The Export Yeti' };
+
   let id = 0;
   const lessons = sections.flatMap((section, sectionIndex) => section.lessons.map((row) => {
     id += 1;
     const [title, category, concept, example, game, task, starter, needs, solution, question, keywords, why] = row;
-    const choices = [why, 'It is only a note for the developer and never affects code.', 'It automatically creates a complete game level.'];
-    const right = (id * 7 + 1) % 3;
-    const answers = [...choices];
-    [answers[right], answers[0]] = [answers[0], answers[right]];
-    const quizType = id === 8 ? 'rearrange' : id % 7 === 0 ? 'true-false' : 'multiple-choice';
+    const fallback = {
+      type: 'multiple-choice', question: `Caddie check: ${question}`, code: example,
+      choices: [why, ...distractors[category]], correct: 0, explanation: why
+    };
+    const quiz = normalizeChoices(quizPresets[id] || fallback, id);
     const fillBlank = id % 6 === 0;
     const broken = category === 'logic'
       ? 'if health = 0:\n    print("GAME OVER")'
@@ -82,21 +147,18 @@
               : 'var dog_speed 20';
     const fixNeeds = category === 'logic' ? ['if','=='] : category === 'godot' ? ['func _ready()'] : category === 'repeat' ? ['for','in'] : category === 'collection' ? [']'] : category === 'function' ? ['func',')'] : ['='];
     const titleSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const challengeType = bossNames[id] ? 'boss-challenge' : 'bonus';
+    const story = challengeStories[(id - 1) % challengeStories.length];
     return {
       id, section: section.name, sectionIndex, sectionIcon: section.icon, title, category,
       difficulty: id < 11 ? 'Beginner' : id < 29 ? 'Growing' : 'Game maker',
       minutes: id < 11 ? 7 : 9, xp: 50,
       skills: [category === 'godot' ? 'Godot editor' : category === 'physics' ? 'Game systems' : 'GDScript', title],
-      concept, example, game,
-      quiz: quizType === 'rearrange'
-        ? { type: quizType, question: 'Put these lines in order to define a function that adds one stroke.', code: '', lines: ['    strokes += 1', 'func award_stroke():'], correctOrder: [1, 0], correct: 0, explanation: 'A function header comes first, followed by its indented instructions.' }
-        : quizType === 'true-false'
-          ? { type: quizType, question: `True or false: ${why}`, code: example, choices: ['True', 'False'], correct: 0, explanation: why }
-          : { type: quizType, question: `Quick check: ${question}`, code: example, choices: answers, correct: right, explanation: why },
+      concept, example, game, quiz,
       fix: { type: 'bug-hunt', prompt: 'Repair this deliberately broken GDScript. Keep the idea, fix the syntax or logic.', starter: broken, required: fixNeeds, hints: ['Read the error out loud and point to the part that is not valid GDScript.','Check the punctuation and operator around the condition or declaration.','Compare your repaired line with the small example in the lesson.'], solution: category === 'logic' ? 'if health == 0:\n    print("GAME OVER")' : category === 'godot' ? 'func _ready():\n    print("Round ready")' : category === 'repeat' ? 'for hole in holes:\n    print(hole)' : category === 'collection' ? 'var holes = ["Pond"]' : category === 'function' ? 'func bark():\n    print("Woof!")' : 'var dog_speed = 20' },
       build: { type: fillBlank ? 'fill-blank' : 'write-code', prompt: fillBlank ? `Fill in the missing code: ${task}` : task, starter: `${starter || ''}${fillBlank ? `${starter ? '\n' : ''}# Fill in the missing line here\n` : ''}`, required: needs, hints: ['Start with the name or keyword the task asks you to use.','Use the tiny example above as a pattern, then change it to fit this task.','Check capitalization, punctuation and indentation in GDScript.'], solution },
       explain: { question: `In your own words: ${question}`, keywords },
-      challenge: { type: [10,18,28,38,46].includes(id) ? 'boss-challenge' : 'bonus', prompt: `Dog golf bonus: adapt what you learned about ${title.toLowerCase()} to help the game respond to a new situation. Add one useful line or small block to your exercise.`, starter: '# Your bonus idea here\n', required: needs.slice(0, Math.min(2, needs.length)) },
+      challenge: { type: challengeType, title: bossNames[id] || ['Goose on the Green', 'Snack Cart Panic', 'Tail vs. Scoreboard', 'The Great Sign Swap', 'Dog-bed Hazard', 'Crowd Control', 'Mushroom Mayhem', 'Runaway Hole'][ (id - 1) % challengeStories.length ], story, prompt: `${story} Remix your ${title.toLowerCase()} skill: ${task} Add a goofy twist of your own if you want.`, starter: '# Bonus idea: write your own twist\n', required: needs.slice(0, Math.min(2, needs.length)), solution },
       completionBadge: id === 1 ? 'First Variable' : id === 4 ? 'If Master' : id === 11 ? 'Looping' : id === 13 || id === 14 ? 'Data Hoarder' : id === 19 ? 'Godot Initiate' : id === 26 ? 'Signal Boost' : id === 29 ? 'Vector Vibes' : id === 46 ? 'Code Wizard' : null,
       slug: titleSlug
     };

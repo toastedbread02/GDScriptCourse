@@ -10,6 +10,7 @@
   let lessonId = 1;
   let step = 'learn';
   let selectedChoice = null;
+  let quizAnswer = '';
   let rearrangeOrder = [0, 1];
   let feedback = {};
   let resetDialog = false;
@@ -157,17 +158,23 @@
   function lessonStep(lesson, p) {
     if (step === 'learn') return `<div class="lesson-card"><div class="eyebrow">STEP 1 · THE IDEA</div><h2>${esc(lesson.title)} are a game-making superpower.</h2><p class="lead">${esc(lesson.concept)}</p><div class="eyebrow" style="margin-top:20px">TINY EXAMPLE</div><pre class="example-block">${esc(lesson.example)}</pre><div class="game-connection"><b>Dog golf connection</b>${esc(lesson.game)}</div><div class="lesson-actions"><span class="small-copy">Reading this earns +5 XP once.</span><button class="btn btn-primary" data-action="next-step">Try a prediction <span>→</span></button></div></div>`;
     if (step === 'predict') {
+      const quiz = lesson.quiz;
       const chosen = selectedChoice;
       const quizMessage = feedback.quiz;
-      const choices = lesson.quiz.type === 'rearrange'
-        ? `<div class="reorder-list" aria-label="Reorder code lines">${rearrangeOrder.map((lineIndex, position) => `<div class="reorder-row"><code>${esc(lesson.quiz.lines[lineIndex])}</code><span class="reorder-controls"><button class="editor-tool" data-action="reorder-move" data-position="${position}" data-delta="-1" ${position === 0 ? 'disabled' : ''} aria-label="Move line up">↑</button><button class="editor-tool" data-action="reorder-move" data-position="${position}" data-delta="1" ${position === rearrangeOrder.length - 1 ? 'disabled' : ''} aria-label="Move line down">↓</button></span></div>`).join('')}</div>`
-        : `<div class="choice-list" role="radiogroup" aria-label="Choose your answer">${lesson.quiz.choices.map((choice, index) => `<button class="choice ${chosen === index ? 'selected' : ''} ${quizMessage && quizMessage.correctIndex === index ? 'correct' : ''}" data-choice="${index}" aria-pressed="${chosen === index}">${String.fromCharCode(65 + index)}. ${esc(choice)}</button>`).join('')}</div>`;
-      return `<div class="lesson-card"><div class="eyebrow">STEP 2 · ${lesson.quiz.type === 'rearrange' ? 'REARRANGE THE LINES' : lesson.quiz.type === 'true-false' ? 'TRUE OR FALSE' : 'MAKE A PREDICTION'}</div><h2>${lesson.quiz.type === 'rearrange' ? 'Build this tiny function in order.' : 'Pause and make a guess.'}</h2><p class="lead">${esc(lesson.quiz.question)}</p>${lesson.quiz.code ? `<pre class="question-code">${esc(lesson.quiz.code)}</pre>` : ''}${choices}${quizMessage ? `<div class="feedback ${quizMessage.ok ? 'success' : 'error'}" role="status"><span>${quizMessage.ok ? '✓' : '↗'}</span><span>${esc(quizMessage.message)}</span></div>` : ''}<div class="lesson-actions"><span class="small-copy">A guess is practice. You can try again.</span><button class="btn btn-primary" data-action="quiz-check" ${chosen === null && lesson.quiz.type !== 'rearrange' ? 'disabled' : ''}>Check answer</button></div></div>`;
+      const choices = quiz.type === 'rearrange'
+        ? `<div class="reorder-list" aria-label="Reorder code lines">${rearrangeOrder.map((lineIndex, position) => `<div class="reorder-row"><code>${esc(quiz.lines[lineIndex])}</code><span class="reorder-controls"><button class="editor-tool" data-action="reorder-move" data-position="${position}" data-delta="-1" ${position === 0 ? 'disabled' : ''} aria-label="Move line up">↑</button><button class="editor-tool" data-action="reorder-move" data-position="${position}" data-delta="1" ${position === rearrangeOrder.length - 1 ? 'disabled' : ''} aria-label="Move line down">↓</button></span></div>`).join('')}</div>`
+        : quiz.type === 'type-answer'
+          ? `<label class="visually-hidden" for="quiz-answer">Your answer</label><input id="quiz-answer" class="answer-input" type="text" data-quiz-answer value="${esc(quizAnswer)}" autocomplete="off" autocapitalize="off" placeholder="Type your answer…">`
+          : `<div class="choice-list" role="radiogroup" aria-label="Choose your answer">${quiz.choices.map((choice, index) => `<button class="choice ${chosen === index ? 'selected' : ''} ${quizMessage && quizMessage.correctIndex === index ? 'correct' : ''}" data-choice="${index}" aria-pressed="${chosen === index}">${String.fromCharCode(65 + index)}. ${esc(choice)}</button>`).join('')}</div>`;
+      const labels = { prediction: 'PREDICT THE OUTPUT', 'type-answer': 'FILL THE BLANK', 'bug-hunt': 'SPOT THE BUG', 'true-false': 'FACT OR FETCH?', rearrange: 'PUTT THE CODE IN ORDER', 'multiple-choice': 'CADDIE CHECK' };
+      const headings = { prediction: 'Call the shot: what happens?', 'type-answer': 'Take a swing. Fill the blank.', 'bug-hunt': 'Find the syntax gremlin.', 'true-false': 'Fact or fetch?', rearrange: 'Rebuild the shot.', 'multiple-choice': 'Pick the caddie-approved answer.' };
+      const ready = quiz.type === 'rearrange' || (quiz.type === 'type-answer' ? quizAnswer.trim().length > 0 : chosen !== null);
+      return `<div class="lesson-card"><div class="eyebrow">STEP 2 · ${labels[quiz.type] || labels['multiple-choice']}</div><h2>${headings[quiz.type] || headings['multiple-choice']}</h2><p class="lead">${esc(quiz.question)}</p>${quiz.code ? `<pre class="question-code">${esc(quiz.code)}</pre>` : ''}${choices}${quizMessage ? `<div class="feedback ${quizMessage.ok ? 'success' : 'error'}" role="status"><span>${quizMessage.ok ? '✓' : '↗'}</span><span>${esc(quizMessage.message)}</span></div>` : ''}<div class="lesson-actions"><span class="small-copy">${quiz.type === 'rearrange' ? 'Use the arrows. The dog is an impatient foreman.' : quiz.type === 'bug-hunt' ? 'Choose the fix that stops the syntax gremlin.' : 'A guess is practice. You can try again.'}</span><button class="btn btn-primary" data-action="quiz-check" ${ready ? '' : 'disabled'}>Check answer</button></div></div>`;
     }
     if (step === 'fix') return `<div class="lesson-card"><div class="eyebrow">STEP 3 · BUG HUNT</div><h2>Help the dog untangle this code.</h2><p class="lead">${esc(lesson.fix.prompt)} The snippet has at least one issue.</p>${editor(lesson, 'fix', lesson.fix, `lesson-${lesson.id}-repair`)}<div class="lesson-actions"><span class="small-copy">A fix is about the idea, not exact spacing.</span><button class="btn btn-secondary" data-action="next-step">Write your own <span>→</span></button></div></div>`;
     if (step === 'build') return `<div class="lesson-card"><div class="eyebrow">STEP 4 · ${lesson.build.type === 'fill-blank' ? 'FILL IN THE BLANK' : 'YOUR TURN'}</div><h2>${lesson.build.type === 'fill-blank' ? 'Complete the missing line.' : 'Now you write it.'}</h2><p class="lead">${esc(lesson.build.prompt)} Build your answer from the idea, not by copying a finished script.</p>${editor(lesson, 'build', lesson.build, `lesson-${lesson.id}-quest`)}<div class="lesson-actions"><span class="small-copy">Course checker looks for the requested structure.</span><button class="btn btn-secondary" data-action="next-step">Explain the idea <span>→</span></button></div></div>`;
     if (step === 'explain') return renderExplain(lesson);
-    return `<div class="lesson-card"><div class="eyebrow">OPTIONAL · ${lesson.challenge.type === 'boss-challenge' ? 'BOSS CHALLENGE' : 'BONUS CHALLENGE'}</div><h2>Give the dog one more trick.</h2><p class="lead">${esc(lesson.challenge.prompt)}</p>${p.challenge ? '<div class="feedback success" role="status">✓ Bonus challenge complete. The dog has a new trick.</div>' : ''}${editor(lesson, 'challenge', lesson.challenge, `lesson-${lesson.id}-bonus`)}<div class="lesson-actions"><span class="small-copy">Bonus reward: +40 XP · optional</span><button class="btn btn-secondary" data-view="tree">Back to skill tree</button></div></div>`;
+    return `<div class="lesson-card"><div class="eyebrow">OPTIONAL · ${lesson.challenge.type === 'boss-challenge' ? 'BOSS FIGHT' : 'SIDE QUEST'}</div><h2>${esc(lesson.challenge.title)}</h2><p class="lead">${esc(lesson.challenge.prompt)}</p>${p.challenge ? '<div class="feedback success" role="status">✓ Quest cleared. The dog has learned a new trick.</div>' : ''}${editor(lesson, 'challenge', lesson.challenge, `lesson-${lesson.id}-bonus`)}<div class="lesson-actions"><span class="small-copy">Bonus reward: +40 XP · optional</span><button class="btn btn-secondary" data-view="tree">Back to skill tree</button></div></div>`;
   }
 
   function renderExplain(lesson) {
@@ -185,10 +192,11 @@
 
   function renderChallenges() {
     const bosses = [10,18,28,38,46].map((id, index) => {
-      const lesson = course.lessons[id - 1]; const unlocked = canOpen(id); const completed = state().completed.includes(id);
-      return `<article class="module-card"><div class="module-card-head"><div class="module-icon">${index === 4 ? '👑' : '⚡'}</div><span class="tag ${completed ? 'xp' : ''}">${completed ? 'CLEARED' : unlocked ? 'BOSS LESSON' : 'LOCKED'}</span></div><h3>${index === 4 ? 'The final code boss' : `World ${index + 1} boss`}</h3><p>Put your ${esc(lesson.section.toLowerCase())} skills to work in “${esc(lesson.title)}.” The bonus is optional.</p><button class="btn ${unlocked ? 'btn-primary' : 'btn-secondary'} btn-small" data-action="boss" data-id="${id}" ${unlocked ? '' : 'disabled'}>${unlocked ? (completed ? 'Replay challenge' : 'Take on the boss') : 'Unlock through lessons'} →</button></article>`;
+      const lesson = course.lessons[id - 1]; const unlocked = canOpen(id); const completed = Boolean(state().lessonProgress[id]?.challenge);
+      return `<article class="module-card"><div class="module-card-head"><div class="module-icon">${index === 4 ? '👑' : '⚡'}</div><span class="tag ${completed ? 'xp' : ''}">${completed ? 'CLEARED' : unlocked ? 'READY' : 'LOCKED'}</span></div><h3>${esc(lesson.challenge.title)}</h3><p>${esc(lesson.challenge.story)} Bring your ${esc(lesson.title.toLowerCase())} skill to the showdown. (+40 XP)</p><button class="btn ${unlocked ? 'btn-primary' : 'btn-secondary'} btn-small" data-action="boss" data-id="${id}" ${unlocked ? '' : 'disabled'}>${unlocked ? (completed ? 'Replay fight' : 'Face the boss') : 'Unlock through lessons'} →</button></article>`;
     }).join('');
-    return `<div class="content-width">${topline('SIDE QUESTS')}<header class="page-title"><div class="eyebrow">OPTIONAL PRACTICE</div><h1>Challenges & boss fights.</h1><p>Try a stretch goal when you feel ready. These won't block your course progress.</p></header><div class="module-grid">${bosses}</div><section class="progress-panel" style="margin-top:16px"><div class="eyebrow">BONUS CODE</div><h3 style="margin:8px 0">Need a quick practice prompt?</h3><p class="small-copy">Open any available lesson and choose the Bonus step for a small dog-golf twist. Rewards are earned once per challenge.</p><button class="btn btn-secondary btn-small" data-action="continue">Open your current lesson</button></section></div>`;
+    const practice = `<section class="practice-yard" data-practice-yard aria-labelledby="practice-title"><div class="practice-heading"><div><div class="eyebrow">TAKE A CODE BREAK</div><h2 id="practice-title">The practice green</h2><p>Three holes, one heroic dog. Pick an angle, set the power, and sink the putt.</p></div><div class="practice-dog" aria-hidden="true">🐶⛳</div></div><div class="practice-score"><span data-hole>HOLE 1 / 3 · PAR 2</span><span>STROKES <b data-strokes>0</b></span></div><div class="practice-canvas-wrap"><canvas class="practice-canvas" aria-label="Dog golf practice green with a ball and cup"></canvas></div><div class="practice-controls"><label class="practice-control"><span>Aim <output data-angle-label>0°</output></span><input type="range" data-aim min="-10" max="40" value="0" aria-label="Shot angle"></label><label class="practice-control"><span>Power <output data-power-label>70%</output></span><input type="range" data-power min="20" max="100" value="70" aria-label="Shot power"></label><button class="btn btn-primary practice-shoot" data-practice-action="shoot">Take the shot ↗</button></div><div class="practice-footer"><p data-practice-status role="status" aria-live="polite">Set your aim and power, then shoot. Three holes. One very serious dog.</p><button class="btn btn-secondary btn-small" data-practice-action="next" hidden>Next hole →</button></div></section>`;
+    return `<div class="content-width">${topline('SIDE QUESTS')}<header class="page-title"><div class="eyebrow">OPTIONAL PRACTICE</div><h1>Challenges & boss fights.</h1><p>Try a stretch goal when you feel ready. These won't block your course progress.</p></header>${practice}<div class="section-head"><div><h2>Boss fights</h2><p>Defeat a coding gremlin. Earn +40 XP.</p></div></div><div class="module-grid">${bosses}</div><section class="progress-panel" style="margin-top:16px"><div class="eyebrow">BONUS CODE</div><h3 style="margin:8px 0">Need another practice prompt?</h3><p class="small-copy">Open any available lesson and take its side quest for an extra dog-golf twist.</p><button class="btn btn-secondary btn-small" data-action="continue">Open your current lesson</button></section></div>`;
   }
 
   function renderProject() {
@@ -244,6 +252,8 @@
     document.documentElement.style.setProperty('--font-scale', String((state().settings.fontSize || 100) / 100));
     document.body.classList.toggle('motion-reduce', Boolean(state().settings.reducedMotion));
     main.innerHTML = `${(pages[view] || renderDashboard)()}${onboarding()}${resetModal()}`;
+    if (view === 'challenges') window.QuestPractice?.mount(main);
+    else window.QuestPractice?.unmount();
     document.querySelectorAll('[data-view]').forEach((item) => item.classList.toggle('active', item.dataset.view === view || (view === 'lesson' && item.dataset.view === 'tree')));
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) sidebar.classList.toggle('open', mobileMenuOpen);
@@ -255,8 +265,10 @@
   function openLesson(id, desiredStep = 'learn') {
     if (!canOpen(id)) { toast('Finish the earlier lesson to unlock this one.'); return; }
     lessonId = id; view = 'lesson'; step = desiredStep;
-    rearrangeOrder = [...(getProgress(id).rearrangeOrder || [0, 1])];
-    selectedChoice = null; feedback = {}; mobileMenuOpen = false; render(); window.scrollTo(0,0);
+    const lineCount = course.lessons[id - 1].quiz.lines?.length || 2;
+    const savedOrder = getProgress(id).rearrangeOrder;
+    rearrangeOrder = savedOrder.length === lineCount ? [...savedOrder] : Array.from({ length: lineCount }, (_, index) => index);
+    selectedChoice = null; quizAnswer = ''; feedback = {}; mobileMenuOpen = false; render(); window.scrollTo(0,0);
   }
 
   function persistEditor(kind, value) {
@@ -289,18 +301,25 @@
 
   function checkQuiz() {
     const lesson = current();
-    if (lesson.quiz.type !== 'rearrange' && selectedChoice === null) return;
+    const quiz = lesson.quiz;
+    const typed = quiz.type === 'type-answer';
+    const arranged = quiz.type === 'rearrange';
+    if (!arranged && !(typed ? quizAnswer.trim() : selectedChoice !== null)) return;
     game.activity(state());
     const p = getProgress(lesson.id);
-    const correct = lesson.quiz.type === 'rearrange'
-      ? rearrangeOrder.every((line, index) => line === lesson.quiz.correctOrder[index])
-      : selectedChoice === lesson.quiz.correct;
+    const correct = arranged
+      ? rearrangeOrder.every((line, index) => line === quiz.correctOrder[index])
+      : typed
+        ? quiz.accepted.some((answer) => validator.normalize(answer) === validator.normalize(quizAnswer))
+        : selectedChoice === quiz.correct;
+    const cheer = { prediction: 'Clean shot!', 'type-answer': 'Right on the nose!', 'bug-hunt': 'Syntax gremlin spotted!', 'true-false': 'The dog gives that a paw-stamp!', rearrange: 'Code in order. Tail wagging.', 'multiple-choice': 'Caddie-approved!' };
+    const nudge = { prediction: 'Read the values from top to bottom, then take another shot.', 'type-answer': 'Close! Think of the keyword or value that fits the blank.', 'bug-hunt': 'That gremlin is still loose. Check the punctuation or operator.', 'true-false': 'Not quite. Think through what the code actually does.', rearrange: 'Almost! A function header goes before its indented instructions.', 'multiple-choice': 'Not that one. Reread the snippet and try another.' };
     if (correct) {
       p.quiz = true;
-      feedback.quiz = { ok: true, correctIndex: selectedChoice, message: `Correct. ${lesson.quiz.explanation}` };
+      feedback.quiz = { ok: true, correctIndex: typed || arranged ? null : selectedChoice, message: `${cheer[quiz.type] || cheer['multiple-choice']} ${quiz.explanation}` };
       award(`lesson:${lesson.id}:quiz`, 10);
     } else {
-      feedback.quiz = { ok: false, correctIndex: null, message: 'Not quite. Reread the snippet and the lesson idea, then take another guess. The dog believes in you.' };
+      feedback.quiz = { ok: false, correctIndex: null, message: nudge[quiz.type] || nudge['multiple-choice'] };
     }
     storage.save(); render();
   }
@@ -387,7 +406,7 @@
     }
     if (action === 'reset-open') { resetDialog = true; render(); return; }
     if (action === 'reset-cancel') { resetDialog = false; render(); return; }
-    if (action === 'reset-confirm') { storage.reset(); resetDialog = false; view = 'dashboard'; lessonId = 1; step = 'learn'; feedback = {}; selectedChoice = null; render(); toast('Your quest is ready for a fresh start.'); return; }
+    if (action === 'reset-confirm') { storage.reset(); resetDialog = false; view = 'dashboard'; lessonId = 1; step = 'learn'; feedback = {}; selectedChoice = null; quizAnswer = ''; render(); toast('Your quest is ready for a fresh start.'); return; }
     if (action === 'mobile-menu') { mobileMenuOpen = !mobileMenuOpen; render(); return; }
     if (action === 'boss') { openLesson(Number(button.dataset.id), 'challenge'); return; }
   }
@@ -406,10 +425,16 @@
     if (target.dataset.choice !== undefined) { selectedChoice = Number(target.dataset.choice); render(); }
   });
 
+  app.addEventListener('quest:practice-clear', () => {
+    const result = award('practice-yard:course-clear', 25);
+    if (result.xp && !state().settings.reducedMotion) showConfetti();
+  });
+
   app.addEventListener('input', (event) => {
     const editorArea = event.target.closest('[data-editor]');
     if (editorArea) persistEditor(editorArea.dataset.editor, editorArea.value);
     if (event.target.matches('[data-explain]')) { state().drafts[`${lessonId}:explain`] = event.target.value; storage.save(); }
+    if (event.target.matches('[data-quiz-answer]')) quizAnswer = event.target.value;
   });
 
   app.addEventListener('change', (event) => {

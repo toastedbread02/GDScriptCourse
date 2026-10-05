@@ -40,12 +40,13 @@ app.js           Navigation, lesson flow, editor UI, settings and rendering
 validator.js     Safe, deterministic checks for code and written answers
 storage.js       Versioned localStorage state and progress drafts
 gamification.js  XP, levels, streaks and achievement rules
+practice.js      The small three-hole canvas practice game
 README.md        Setup, hosting and course editing guide
 ```
 
 ## How lessons work
 
-Each lesson includes a plain-language explanation, a small GDScript example, a dog-golf connection, a question, a repair exercise, a write-it-yourself task, and a short explain-it-back response. Questions vary across prediction, true/false, and line ordering; some writing prompts are fill-in-the-blank. Optional bonus and boss challenges add another way to practice. Hints appear one at a time; the solution button appears after three unsuccessful code checks. A revealed solution lowers that exercise’s XP reward without blocking progress.
+Each lesson includes a plain-language explanation, a small GDScript example, a dog-golf connection, a repair exercise, a write-it-yourself task, and a short explain-it-back response. The question mix includes output predictions, typed answers, bug hunts, true/false, line ordering, and multiple choice. Side quests have rotating dog-golf story prompts, and five named boss fights punctuate the course. The Challenges page also has a playable three-hole practice green with angle, power, obstacles, and a one-time 25 XP reward for clearing the course. Hints appear one at a time; the solution button appears after three unsuccessful code checks. A revealed solution lowers that exercise’s XP reward without blocking progress.
 
 The course checker looks for the requested code structure and selected tokens, strips comments for those checks, and gives feedback for common mistakes. It **does not execute GDScript**, parse the full language, or run Godot. A passing check means the submission matches the lesson’s learning pattern; it is not a guarantee that a script will run in Godot unchanged.
 
@@ -61,7 +62,7 @@ Edit `course-data.js`. Lessons are grouped into sections. Each lesson row follow
 ]
 ```
 
-For example, a row begins with a title such as `Variables` and a category such as `data`. Categories currently used are `data`, `logic`, `function`, `repeat`, `collection`, `structure`, `godot`, `physics`, and `systems`. The app derives the lesson number, section, difficulty, quiz choices, repair exercise, and reward from the row. Keep the required fragments specific enough to check the goal, but flexible enough to allow equivalent formatting.
+For example, a row begins with a title such as `Variables` and a category such as `data`. Categories currently used are `data`, `logic`, `function`, `repeat`, `collection`, `structure`, `godot`, `physics`, and `systems`. The app derives the lesson number, section, difficulty, default quiz, repair exercise, and reward from the row; `quizPresets` in `course-data.js` supplies the hand-authored output, bug-hunt, typed-answer, true/false, and reorder questions. Keep the required fragments specific enough to check the goal, but flexible enough to allow equivalent formatting.
 
 To add a new exercise type or a different validation rule, update `validator.js` and the lesson rendering/check flow in `app.js`. Never evaluate or execute submitted editor text; the editor is intentionally a checker, not a runtime.
 
@@ -73,6 +74,7 @@ To add a new exercise type or a different validation rule, update `validator.js`
 - Explain-it-back response: **15 XP**, once per lesson
 - Lesson completion: **50 XP**, once per lesson
 - Optional bonus challenge: **40 XP**, once per lesson
+- Clear the three-hole practice green: **25 XP**, once
 - Completing a final-project phase: **200 XP**, once per phase
 
 Completing every step in a lesson can award up to **130 XP** across those actions. The lesson card shows the 50 XP completion reward. The level threshold starts at 250 XP and grows gradually. A streak advances on activity days and continues when the next activity is on the following local calendar day. Nothing expires, and streaks do not gate course access.

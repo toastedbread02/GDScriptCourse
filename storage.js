@@ -8,6 +8,14 @@
   });
   const finiteInt = (value, fallback = 0, max = 100000000) => Number.isFinite(value) ? Math.max(0, Math.min(max, Math.floor(value))) : fallback;
   const record = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const defaultOrder = (id) => {
+    const quiz = window.QuestCourse?.lessons?.[id - 1]?.quiz;
+    return quiz?.type === 'rearrange' ? Array.from({ length: quiz.lines.length }, (_, index) => index) : [0, 1];
+  };
+  const isValidOrder = (order, fallback) => Array.isArray(order)
+    && order.length === fallback.length
+    && order.every((index) => Number.isInteger(index) && index >= 0 && index < fallback.length)
+    && new Set(order).size === fallback.length;
   function sanitize(saved) {
     const clean = fresh();
     clean.onboarded = Boolean(saved.onboarded);
@@ -33,11 +41,12 @@
     for (let id = 1; id <= 46; id += 1) {
       const item = record(progress[id]);
       if (!Object.keys(item).length) continue;
+      const lineOrder = defaultOrder(id);
       const map = (value, type, max = 1000) => Object.fromEntries(Object.entries(record(value)).filter(([key, field]) => ['fix', 'build', 'challenge'].includes(key) && typeof field === type).map(([key, field]) => [key, type === 'number' ? finiteInt(field, 0, max) : field]));
       clean.lessonProgress[id] = {
         quiz: Boolean(item.quiz), fix: Boolean(item.fix), build: Boolean(item.build), explain: Boolean(item.explain), challenge: Boolean(item.challenge),
         hints: map(item.hints, 'number', 3), attempts: map(item.attempts, 'number'), revealed: map(item.revealed, 'boolean'),
-        rearrangeOrder: Array.isArray(item.rearrangeOrder) && item.rearrangeOrder.length === 2 && [...item.rearrangeOrder].sort().join(',') === '0,1' ? item.rearrangeOrder : [0, 1]
+        rearrangeOrder: isValidOrder(item.rearrangeOrder, lineOrder) ? item.rearrangeOrder : lineOrder
       };
     }
     clean.currentLesson = Math.max(1, Math.min(46, finiteInt(saved.currentLesson, 1, 46)));
@@ -61,7 +70,7 @@
   function replace(next) { state = next; save(); }
   function reset() { state = fresh(); save(); }
   function progress(id) {
-    if (!state.lessonProgress[id]) state.lessonProgress[id] = { quiz: false, fix: false, build: false, explain: false, challenge: false, rearrangeOrder: [0, 1], hints: {}, attempts: {}, revealed: {} };
+    if (!state.lessonProgress[id]) state.lessonProgress[id] = { quiz: false, fix: false, build: false, explain: false, challenge: false, rearrangeOrder: defaultOrder(id), hints: {}, attempts: {}, revealed: {} };
     const p = state.lessonProgress[id];
     p.hints ||= {}; p.attempts ||= {}; p.revealed ||= {};
     return p;
