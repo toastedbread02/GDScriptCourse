@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131a">
+  <meta name="description" content="A free, interactive Godot 4 GDScript course. Learn by building a very silly dog golf game.">
+  <title>GDScript Quest — Learn GDScript. Build games.</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="accessibility.css">
+  <script defer src="course-data.js"></script>
+  <script defer src="storage.js"></script>
+  <script defer src="validator.js"></script>
+  <script defer src="gamification.js"></script>
+  <script defer src="offline.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#dashboard" data-view="dashboard" aria-label="GDScript Quest home">
+        <span class="brand-mark">GQ<span>✦</span></span>
+        <span class="brand-copy"><b>GDScript</b><small>QUEST</small></span>
+      </a>
+      <div class="sidebar-label">YOUR ADVENTURE</div>
+      <nav class="primary-nav">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span> Learn</button>
+        <button class="nav-item" data-view="tree"><span>◈</span> Skill tree <i class="nav-count">46</i></button>
+        <button class="nav-item" data-view="challenges"><span>⚡</span> Challenges</button>
+        <button class="nav-item" data-view="project"><span>▣</span> Final project</button>
+      </nav>
+      <div class="sidebar-label sidebar-label-spaced">YOUR STATS</div>
+      <nav class="primary-nav">
+        <button class="nav-item" data-view="achievements"><span>✹</span> Achievements</button>
+        <button class="nav-item" data-view="profile"><span>◉</span> Profile</button>
+        <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="dog-sticker" aria-hidden="true">🐶</div>
+        <p>One tiny lesson.<br><strong>One big game.</strong></p>
+        <div class="offline-label"><span></span> Works offline</div>
+      </div>
+    </aside>
+    <div class="mobile-topbar">
+      <a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">GQ<span>✦</span></span><span class="brand-copy"><b>GDScript</b><small>QUEST</small></span></a>
+      <button class="icon-button" data-action="mobile-menu" aria-label="Open navigation">☰</button>
+    </div>
+    <main id="main" class="main-content" tabindex="-1"></main>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
