@@ -160,6 +160,7 @@
         ball.x = width * obstacle.at - obstacle.width / 2 - 7;
         ball.vx *= -.42; ball.vy = Math.min(ball.vy, -55);
         setStatus(`Thunk! ${obstacle.emoji} in the way. Loft it with more angle.`);
+        yard.dispatchEvent(new CustomEvent('quest:practice-obstacle', { bubbles: true, detail: { emoji: obstacle.emoji } }));
       }
       if (Math.hypot(ball.vx, ball.vy) < 13) { ball.vx = 0; ball.vy = 0; stopShot(); return; }
       draw();
@@ -175,6 +176,7 @@
       strokes += 1; moving = true; lastFrame = 0;
       setStatus('The ball is rolling!');
       updateLabels();
+      yard.dispatchEvent(new CustomEvent('quest:practice-shot', { bubbles: true, detail: { power: Number(powerInput.value), angle: Number(angleInput.value) } }));
       animation = requestAnimationFrame(animate);
     }
 

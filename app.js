@@ -16,6 +16,9 @@
   let resetDialog = false;
   let mobileMenuOpen = false;
   let celebration = false;
+  let soundContext = null;
+  let soundCloseTimer = 0;
+  let soundQueueTime = 0;
 
   const steps = [
     ['learn', 'Learn'], ['predict', 'Predict'], ['fix', 'Fix code'],
@@ -40,18 +43,56 @@
     window.setTimeout(() => node.remove(), 3300);
   }
 
-  function chirp() {
+  function silenceSounds() {
+    window.clearTimeout(soundCloseTimer);
+    soundCloseTimer = 0;
+    soundQueueTime = 0;
+    if (soundContext) {
+      const closing = soundContext;
+      soundContext = null;
+      closing.close().catch(() => {});
+    }
+  }
+
+  function playCue(kind, detail = {}) {
     if (!state().settings.sound) return;
+    const cues = {
+      success: { wave: 'triangle', notes: [[523, 0, .1], [784, .075, .14]] },
+      mistake: { wave: 'sine', notes: [[247, 0, .12], [196, .11, .16]] },
+      hint: { wave: 'sine', notes: [[392, 0, .09], [523, .1, .12]] },
+      complete: { wave: 'triangle', notes: [[523, 0, .12], [659, .09, .12], [784, .18, .2]] },
+      level: { wave: 'triangle', notes: [[587, 0, .11], [740, .09, .11], [880, .18, .12], [1175, .28, .24]] },
+      badge: { wave: 'sine', notes: [[784, 0, .12], [1175, .09, .13], [1568, .2, .22]] },
+      putt: { wave: 'triangle', notes: [[Math.round(175 + (Number(detail.power) || 35) * 1.1), 0, .15, 118]] },
+      thunk: { wave: 'sine', notes: [[164, 0, .1, 105], [110, .055, .12]] },
+      cup: { wave: 'sine', notes: [[784, 0, .1], [988, .075, .12], [1318, .16, .2]] }
+    };
+    const cue = cues[kind];
+    if (!cue) return;
     try {
-      const audio = new AudioContext();
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-      oscillator.type = 'sine'; oscillator.frequency.value = 680;
-      gain.gain.setValueAtTime(.07, audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .12);
-      oscillator.connect(gain); gain.connect(audio.destination);
-      oscillator.start(); oscillator.stop(audio.currentTime + .12);
-      oscillator.onended = () => audio.close();
+      const Audio = window.AudioContext || window.webkitAudioContext;
+      if (!Audio) return;
+      if (!soundContext || soundContext.state === 'closed') soundContext = new Audio();
+      const audio = soundContext;
+      if (audio.state === 'suspended') audio.resume().catch(() => {});
+      window.clearTimeout(soundCloseTimer);
+      const origin = Math.max(audio.currentTime + .012, soundQueueTime);
+      for (const [frequency, delay, duration, endFrequency] of cue.notes) {
+        const start = origin + delay;
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.type = cue.wave;
+        oscillator.frequency.setValueAtTime(frequency, start);
+        if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(.035, start + .014);
+        gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+        oscillator.connect(gain); gain.connect(audio.destination);
+        oscillator.start(start); oscillator.stop(start + duration + .015);
+      }
+      const cueDuration = Math.max(...cue.notes.map((note) => note[1] + note[2]));
+      soundQueueTime = origin + cueDuration + .025;
+      soundCloseTimer = window.setTimeout(silenceSounds, Math.ceil((Math.max(0, soundQueueTime - audio.currentTime) + .18) * 1000));
     } catch (_) { /* Sound is optional; the course works without audio. */ }
   }
 
@@ -62,12 +103,15 @@
     storage.save();
     if (result.xp) {
       toast(`+${result.xp} XP — nice work!`, 'xp-toast');
-      chirp();
     }
     if (result.leveled) toast(`Level up! You reached coder level ${result.level}.`, 'xp-toast');
     const newBadges = game.unlock(s);
     storage.save();
     newBadges.forEach((badge) => toast(`Achievement unlocked: ${badge.title}`, 'xp-toast'));
+    if (result.leveled) playCue('level');
+    else if (newBadges.length) playCue('badge');
+    else if (/:complete$/.test(key) || key.startsWith('project:phase:') || key === 'practice-yard:course-clear') playCue('complete');
+    else if (result.xp) playCue('success');
     return result;
   }
 
@@ -233,7 +277,7 @@
   function renderSettings() {
     const settings = state().settings;
     const toggle = (key, title, description) => `<div class="setting-row"><div><strong>${title}</strong><small>${description}</small></div><button class="switch" role="switch" aria-checked="${Boolean(settings[key])}" data-toggle="${key}" aria-label="${title}"></button></div>`;
-    return `<div class="content-width">${topline('MAKE IT YOURS')}<header class="page-title"><div class="eyebrow">PREFERENCES</div><h1>Set up your quest.</h1><p>Changes save automatically on this device.</p></header><div class="settings-list"><div class="setting-row"><div><strong>Color theme</strong><small>Pick the look that feels right.</small></div><select data-setting="theme" aria-label="Color theme"><option value="dark" ${settings.theme === 'dark' ? 'selected' : ''}>Dark</option><option value="light" ${settings.theme === 'light' ? 'selected' : ''}>Light</option></select></div>${toggle('reducedMotion','Reduce motion','Limit celebratory and interface animations.')}${toggle('sound','UI sounds','Play a tiny sound on success. Off by default.') }<div class="setting-row"><div><strong>Reading size</strong><small>Adjust the course text size.</small></div><select data-setting="fontSize" aria-label="Reading size"><option value="90" ${settings.fontSize === 90 ? 'selected' : ''}>Compact</option><option value="100" ${settings.fontSize === 100 ? 'selected' : ''}>Standard</option><option value="110" ${settings.fontSize === 110 ? 'selected' : ''}>Large</option><option value="120" ${settings.fontSize === 120 ? 'selected' : ''}>Extra large</option></select></div></div><section class="progress-panel" style="margin-top:16px"><div class="eyebrow danger">START OVER</div><h3 style="margin:8px 0">Reset all progress</h3><p class="small-copy">Erase lessons, XP, streaks, achievements, settings and project progress from this browser.</p><button class="btn btn-quiet danger-btn btn-small" data-action="reset-open">Reset all progress</button></section></div>`;
+    return `<div class="content-width">${topline('MAKE IT YOURS')}<header class="page-title"><div class="eyebrow">PREFERENCES</div><h1>Set up your quest.</h1><p>Changes save automatically on this device.</p></header><div class="settings-list"><div class="setting-row"><div><strong>Color theme</strong><small>Pick the look that feels right.</small></div><select data-setting="theme" aria-label="Color theme"><option value="dark" ${settings.theme === 'dark' ? 'selected' : ''}>Dark</option><option value="light" ${settings.theme === 'light' ? 'selected' : ''}>Light</option></select></div>${toggle('reducedMotion','Reduce motion','Limit celebratory and interface animations.')}${toggle('sound','UI sounds','Hear gentle cues for answers, rewards, and putts. Off by default.') }<div class="setting-row"><div><strong>Reading size</strong><small>Adjust the course text size.</small></div><select data-setting="fontSize" aria-label="Reading size"><option value="90" ${settings.fontSize === 90 ? 'selected' : ''}>Compact</option><option value="100" ${settings.fontSize === 100 ? 'selected' : ''}>Standard</option><option value="110" ${settings.fontSize === 110 ? 'selected' : ''}>Large</option><option value="120" ${settings.fontSize === 120 ? 'selected' : ''}>Extra large</option></select></div></div><section class="progress-panel" style="margin-top:16px"><div class="eyebrow danger">START OVER</div><h3 style="margin:8px 0">Reset all progress</h3><p class="small-copy">Erase lessons, XP, streaks, achievements, settings and project progress from this browser.</p><button class="btn btn-quiet danger-btn btn-small" data-action="reset-open">Reset all progress</button></section></div>`;
   }
 
   function onboarding() {
@@ -295,6 +339,7 @@
       if (kind !== 'challenge' && gatesDone(p)) completeLesson(lesson.id);
     } else {
       p.attempts[kind] = (p.attempts[kind] || 0) + 1; feedback[key] = result; storage.save();
+      playCue('mistake');
     }
     render();
   }
@@ -320,6 +365,7 @@
       award(`lesson:${lesson.id}:quiz`, 10);
     } else {
       feedback.quiz = { ok: false, correctIndex: null, message: nudge[quiz.type] || nudge['multiple-choice'] };
+      playCue('mistake');
     }
     storage.save(); render();
   }
@@ -335,7 +381,7 @@
       const p = getProgress(lesson.id); p.explain = true;
       award(`${key}:checked`, 15); storage.save();
       if (gatesDone(p)) completeLesson(lesson.id);
-    }
+    } else playCue('mistake');
     render();
   }
 
@@ -380,7 +426,7 @@
     if (action === 'code-check') { checkEditor(button.dataset.kind); return; }
     if (action === 'hint') {
       const p = getProgress(lessonId); const kind = button.dataset.kind;
-      p.hints[kind] = Math.min(3, (p.hints[kind] || 0) + 1); storage.save(); render(); return;
+      p.hints[kind] = Math.min(3, (p.hints[kind] || 0) + 1); storage.save(); playCue('hint'); render(); return;
     }
     if (action === 'solution') {
       const kind = button.dataset.kind; const lesson = current(); const p = getProgress(lessonId); const key = `${lessonId}:${kind}`;
@@ -417,13 +463,22 @@
     if (target.dataset.action) { handleAction(target); return; }
     if (target.dataset.toggle) {
       const key = target.dataset.toggle;
-      state().settings[key] = !state().settings[key]; storage.save(); render(); return;
+      state().settings[key] = !state().settings[key]; storage.save();
+      if (key === 'sound') {
+        if (state().settings.sound) playCue('success');
+        else silenceSounds();
+      }
+      render(); return;
     }
     if (target.dataset.view) { view = target.dataset.view; mobileMenuOpen = false; render(); window.scrollTo(0,0); return; }
     if (target.dataset.lesson) { openLesson(Number(target.dataset.lesson)); return; }
     if (target.dataset.step) { step = target.dataset.step; render(); return; }
     if (target.dataset.choice !== undefined) { selectedChoice = Number(target.dataset.choice); render(); }
   });
+
+  app.addEventListener('quest:practice-shot', (event) => playCue('putt', event.detail));
+  app.addEventListener('quest:practice-obstacle', () => playCue('thunk'));
+  app.addEventListener('quest:practice-hole', () => playCue('cup'));
 
   app.addEventListener('quest:practice-clear', () => {
     const result = award('practice-yard:course-clear', 25);

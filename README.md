@@ -85,4 +85,4 @@ The site stores state under `gdscript_quest_save` in this browser’s `localStor
 
 ## Accessibility and privacy
 
-The site supports keyboard navigation, visible focus, labels for inputs, reduced motion, text sizing, and dark/light themes. UI sounds are off by default. Lesson text, code checks, and saves stay in the browser; the app sends no analytics or user data to a service.
+The site supports keyboard navigation, visible focus, labels for inputs, reduced motion, text sizing, and dark/light themes. Optional, locally synthesized sound cues cover answers, hints, rewards, and practice green shots; they are off by default and use no audio files or network calls. Lesson text, code checks, and saves stay in the browser; the app sends no analytics or user data to a service.
